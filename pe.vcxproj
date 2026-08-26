@@ -153,6 +153,7 @@
     <ClInclude Include="src\dos_header.hpp" />
     <ClInclude Include="src\image.hpp" />
     <ClInclude Include="src\nt_headers.hpp" />
+    <ClInclude Include="src\section_header.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
