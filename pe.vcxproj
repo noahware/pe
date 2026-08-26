@@ -149,6 +149,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data_directory.hpp" />
+    <ClInclude Include="src\deps.hpp" />
     <ClInclude Include="src\dos_header.hpp" />
     <ClInclude Include="src\image.hpp" />
     <ClInclude Include="src\nt_headers.hpp" />
