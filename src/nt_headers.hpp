@@ -52,7 +52,7 @@ namespace pe
 		std::uint64_t size_of_heap_commit;
 		std::uint32_t loader_flags;
 		std::uint32_t number_of_rva_and_sizes;
-		data_directory data_directories[data_directory::count];
+		data_directories data_dirs;
 
 		[[nodiscard]] bool ok() const noexcept
 		{
