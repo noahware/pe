@@ -5,6 +5,7 @@
 #include "export_directory.hpp"
 #include "delay_load_directory.hpp"
 #include "import_directory.hpp"
+#include "load_config_directory.hpp"
 #include "debug_directory.hpp"
 #include "reloc_directory.hpp"
 #include "tls_directory.hpp"
@@ -160,6 +161,16 @@ namespace pe
 				return {};
 
 			return { reinterpret_cast<const debug_directory*>(base + dir.virtual_address), dir.size / sizeof(debug_directory) };
+		}
+
+		[[nodiscard]] const load_config_directory* load_config() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.load_config;
+
+			return dir.virtual_address && dir.used()
+				? reinterpret_cast<const load_config_directory*>(base + dir.virtual_address)
+				: nullptr;
 		}
 
 		[[nodiscard]] const tls_directory* tls() const noexcept
