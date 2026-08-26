@@ -25,17 +25,17 @@ namespace pe
 		struct
 		{
 			std::uint16_t offset : 12;
-			std::uint16_t type : 4;
+			reloc_type type : 4;
 		};
 	};
 
 	static_assert(sizeof(reloc_entry) == 0x2);
 
-	struct reloc_directory
+	struct reloc_block
 	{
 		std::uint32_t virtual_address;
 		std::uint32_t size_of_block;
 	};
 
-	static_assert(sizeof(reloc_directory) == 0x8);
+	static_assert(sizeof(reloc_block) == 0x8);
 }
