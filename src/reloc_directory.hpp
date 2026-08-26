@@ -1,4 +1,5 @@
 #pragma once
+#include "addr.hpp"
 #include "deps.hpp"
 
 namespace pe
@@ -38,4 +39,10 @@ namespace pe
 	};
 
 	static_assert(sizeof(reloc_block) == 0x8);
+
+	struct reloc_info
+	{
+		reloc_type type;
+		const_bin_addr loc;
+	};
 }

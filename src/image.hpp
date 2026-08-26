@@ -4,6 +4,7 @@
 #include "nt_headers.hpp"
 #include "export_directory.hpp"
 #include "import_directory.hpp"
+#include "reloc_directory.hpp"
 
 namespace pe
 {
@@ -128,6 +129,57 @@ namespace pe
 									const auto slot_rva = iat_rva + static_cast<std::uint32_t>(t * sizeof(thunk_data));
 
 									return import_info{ thunk.is_ordinal != 0, ordinal, name, const_bin_addr{ base, slot_rva } };
+								});
+					})
+				| views::join;
+		}
+
+		[[nodiscard]] auto relocs() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.basereloc;
+
+			const auto dir_rva = dir.virtual_address && dir.used() ? dir.virtual_address : 0u;
+			const auto dir_size = dir_rva ? dir.size : 0u;
+
+			// blocks are variable length, so the nth one can only be found by walking from the first
+			const auto block_at = [base, dir_rva, dir_size](const std::uint32_t index) -> const reloc_block*
+			{
+				std::uint32_t walked = 0;
+
+				for (std::uint32_t i = 0; walked < dir_size; ++i)
+				{
+					const auto* block = reinterpret_cast<const reloc_block*>(base + dir_rva + walked);
+
+					if (block->size_of_block < sizeof(reloc_block))
+						break;
+
+					if (i == index)
+						return block;
+
+					walked += block->size_of_block;
+				}
+
+				return nullptr;
+			};
+
+			return views::iota(0u)
+				| views::take_while([block_at](const std::uint32_t b) { return block_at(b) != nullptr; })
+				| views::transform([base, block_at](const std::uint32_t b)
+					{
+						const auto* block = block_at(b);
+						const auto* entries = reinterpret_cast<const reloc_entry*>(block + 1);
+
+						const auto page_rva = block->virtual_address;
+						const auto count = static_cast<std::uint32_t>(
+							(block->size_of_block - sizeof(reloc_block)) / sizeof(reloc_entry));
+
+						return views::iota(0u, count)
+							// absolute entries are padding to keep blocks 4 byte aligned
+							| views::filter([entries](const std::uint32_t e) { return entries[e].type != reloc_type::absolute; })
+							| views::transform([base, entries, page_rva](const std::uint32_t e) -> reloc_info
+								{
+									return { entries[e].type, const_bin_addr{ base, page_rva + entries[e].offset } };
 								});
 					})
 				| views::join;
