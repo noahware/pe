@@ -3,6 +3,7 @@
 #include "dos_header.hpp"
 #include "nt_headers.hpp"
 #include "export_directory.hpp"
+#include "import_directory.hpp"
 
 namespace pe
 {
@@ -78,6 +79,57 @@ namespace pe
 
 						return export_info{ name.empty(), ord_base + i, name, const_bin_addr{ base, funcs[i] } };
 					});
+		}
+
+		[[nodiscard]] auto imports() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.imports;
+
+			const auto* descs = dir.virtual_address && dir.used()
+				? reinterpret_cast<const import_directory*>(base + dir.virtual_address)
+				: nullptr;
+
+			// the descriptor array is null terminated, so there is no count to iterate to
+			return std::views::iota(0u)
+				| std::views::take_while([descs](const std::uint32_t d)
+					{
+						return descs && (descs[d].original_first_thunk || descs[d].first_thunk);
+					})
+				| std::views::transform([base, descs](const std::uint32_t d)
+					{
+						// bound imports overwrite the IAT, so prefer the untouched lookup table
+						const auto lookup_rva = descs[d].original_first_thunk
+							? descs[d].original_first_thunk
+							: descs[d].first_thunk;
+
+						const auto* thunks = reinterpret_cast<const thunk_data*>(base + lookup_rva);
+						const auto iat_rva = descs[d].first_thunk;
+
+						return std::views::iota(0u)
+							| std::views::take_while([thunks](const std::uint32_t t) { return thunks[t].used(); })
+							| std::views::transform([base, thunks, iat_rva](const std::uint32_t t) -> import_info
+								{
+									const auto& thunk = thunks[t];
+
+									auto name = string_view_t{};
+									auto ordinal = std::uint32_t{};
+
+									if (thunk.is_ordinal)
+									{
+										ordinal = static_cast<std::uint32_t>(thunk.ordinal);
+									}
+									else
+									{
+										name = reinterpret_cast<const import_by_name*>(base + thunk.address_of_data)->str();
+									}
+
+									const auto slot_rva = iat_rva + static_cast<std::uint32_t>(t * sizeof(thunk_data));
+
+									return import_info{ thunk.is_ordinal != 0, ordinal, name, const_bin_addr{ base, slot_rva } };
+								});
+					})
+				| std::views::join;
 		}
 
 		[[nodiscard]] span_t<section_header> sections() noexcept;

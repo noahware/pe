@@ -32,6 +32,9 @@
     <ClInclude Include="src\export_directory.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\import_directory.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\nt_headers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
