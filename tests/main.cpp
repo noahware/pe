@@ -1,4 +1,5 @@
 #include <print>
+#include "image.hpp"
 
 int main()
 {
