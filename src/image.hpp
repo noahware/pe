@@ -31,6 +31,8 @@ namespace pe
 			return dos_hdr_.nt_hdrs();
 		}
 
+		[[nodiscard]] std::uint32_t size() const noexcept;
+
 		[[nodiscard]] span_t<section_header> sections() noexcept;
 		[[nodiscard]] span_t<const section_header> sections() const noexcept;
 
