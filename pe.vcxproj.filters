@@ -35,6 +35,9 @@
     <ClInclude Include="src\nt_headers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\reloc_directory.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\data_directory.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -155,6 +155,7 @@
     <ClInclude Include="src\import_directory.hpp" />
     <ClInclude Include="src\image.hpp" />
     <ClInclude Include="src\nt_headers.hpp" />
+    <ClInclude Include="src\reloc_directory.hpp" />
     <ClInclude Include="src\pe.hpp" />
     <ClInclude Include="src\addr.hpp" />
     <ClInclude Include="src\section_header.hpp" />
