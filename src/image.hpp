@@ -1,8 +1,11 @@
 #pragma once
+#include "deps.hpp"
 #include "dos_header.hpp"
 
 namespace pe
 {
+	struct section_header;
+
 	class image
 	{
 	public:
@@ -27,6 +30,9 @@ namespace pe
 		{
 			return dos_hdr_.nt_hdrs();
 		}
+
+		[[nodiscard]] span_t<section_header> sections() noexcept;
+		[[nodiscard]] span_t<const section_header> sections() const noexcept;
 
 	protected:
 		dos_header dos_hdr_;

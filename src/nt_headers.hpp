@@ -2,6 +2,7 @@
 #include <cstdint>
 
 #include "data_directory.hpp"
+#include "section_header.hpp"
 
 namespace pe
 {
@@ -74,6 +75,23 @@ namespace pe
 		std::uint32_t signature;
 		file_header file_hdr;
 		optional_header64 optional_hdr;
+
+		[[nodiscard]] section_header* first_section_hdr() noexcept
+		{
+			const auto& self = *this;
+
+			return const_cast<section_header*>(self.first_section_hdr());
+		}
+
+		[[nodiscard]] const section_header* first_section_hdr() const noexcept
+		{
+			return reinterpret_cast<const section_header*>(reinterpret_cast<const std::uint8_t*>(&optional_hdr) + file_hdr.size_of_optional_header);
+		}
+
+		[[nodiscard]] std::uint16_t num_sections() const noexcept
+		{
+			return file_hdr.number_of_sections;
+		}
 
 		[[nodiscard]] bool ok() const noexcept
 		{
