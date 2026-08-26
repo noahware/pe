@@ -7,8 +7,6 @@
 
 namespace pe
 {
-	struct section_header;
-
 	class image
 	{
 	public:
@@ -40,7 +38,10 @@ namespace pe
 			return dos_hdr_.nt_hdrs();
 		}
 
-		[[nodiscard]] std::uint32_t size() const noexcept;
+		[[nodiscard]] std::uint32_t size() const noexcept
+		{
+			return nt_hdrs()->optional_hdr.size_of_image;
+		}
 
 		[[nodiscard]] auto exports() const noexcept
 		{
@@ -132,8 +133,20 @@ namespace pe
 				| views::join;
 		}
 
-		[[nodiscard]] span_t<section_header> sections() noexcept;
-		[[nodiscard]] span_t<const section_header> sections() const noexcept;
+		[[nodiscard]] span_t<section_header> sections() noexcept
+		{
+			const auto& self = *this;
+			const auto sec = self.sections();
+
+			return { const_cast<section_header*>(sec.data()), sec.size() };
+		}
+
+		[[nodiscard]] span_t<const section_header> sections() const noexcept
+		{
+			const auto nt = nt_hdrs();
+
+			return span_t{ nt->first_section_hdr(), nt->num_sections() };
+		}
 
 	protected:
 		dos_header dos_hdr_;
