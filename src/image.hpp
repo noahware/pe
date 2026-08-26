@@ -5,6 +5,7 @@
 #include "export_directory.hpp"
 #include "import_directory.hpp"
 #include "reloc_directory.hpp"
+#include "tls_directory.hpp"
 
 namespace pe
 {
@@ -146,6 +147,35 @@ namespace pe
 								});
 					})
 				| views::join;
+		}
+
+		[[nodiscard]] const tls_directory* tls() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.tls;
+
+			return dir.virtual_address && dir.used()
+				? reinterpret_cast<const tls_directory*>(base + dir.virtual_address)
+				: nullptr;
+		}
+
+		[[nodiscard]] auto tls_callbacks() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto* const dir = tls();
+			const auto img_base = base_addr();
+
+			// the callback table is pointed to by a va, and holds vas, terminated by a null one
+			const auto* callbacks = dir && dir->address_of_call_backs
+				? reinterpret_cast<const tls_directory::value_type*>(base + (dir->address_of_call_backs - img_base))
+				: nullptr;
+
+			return views::iota(0u)
+				| views::take_while([callbacks](const std::uint32_t c) { return callbacks && callbacks[c]; })
+				| views::transform([base, callbacks, img_base](const std::uint32_t c) -> const_bin_addr
+					{
+						return const_bin_addr{ base, static_cast<std::uint32_t>(callbacks[c] - img_base) };
+					});
 		}
 
 		[[nodiscard]] auto relocs() const noexcept
