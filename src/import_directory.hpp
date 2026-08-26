@@ -6,9 +6,10 @@ namespace pe
 {
 	struct import_info
 	{
+		string_view_t module_name;
+		string_view_t import_name;
 		bool is_ordinal;
 		std::uint32_t ordinal;
-		string_view_t name;
 		const_bin_addr iat_slot;
 	};
 

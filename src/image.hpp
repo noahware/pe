@@ -39,6 +39,16 @@ namespace pe
 			return dos_hdr_.nt_hdrs();
 		}
 
+		[[nodiscard]] std::uint32_t entry_point() const noexcept
+		{
+			return nt_hdrs()->optional_hdr.address_of_entry_point;
+		}
+
+		[[nodiscard]] std::uint64_t base_addr() const noexcept
+		{
+			return nt_hdrs()->optional_hdr.image_base;
+		}
+
 		[[nodiscard]] std::uint32_t size() const noexcept
 		{
 			return nt_hdrs()->optional_hdr.size_of_image;
@@ -108,13 +118,17 @@ namespace pe
 						const auto* thunks = reinterpret_cast<const thunk_data*>(base + lookup_rva);
 						const auto iat_rva = descs[d].first_thunk;
 
+						const auto module_name = descs[d].name
+							? string_view_t{ reinterpret_cast<const char*>(base + descs[d].name) }
+							: string_view_t{};
+
 						return views::iota(0u)
 							| views::take_while([thunks](const std::uint32_t t) { return thunks[t].used(); })
-							| views::transform([base, thunks, iat_rva](const std::uint32_t t) -> import_info
+							| views::transform([base, thunks, iat_rva, module_name](const std::uint32_t t) -> import_info
 								{
 									const auto& thunk = thunks[t];
 
-									auto name = string_view_t{};
+									auto import_name = string_view_t{};
 									auto ordinal = std::uint32_t{};
 
 									if (thunk.is_ordinal)
@@ -123,12 +137,12 @@ namespace pe
 									}
 									else
 									{
-										name = reinterpret_cast<const import_by_name*>(base + thunk.address_of_data)->str();
+										import_name = reinterpret_cast<const import_by_name*>(base + thunk.address_of_data)->str();
 									}
 
 									const auto slot_rva = iat_rva + static_cast<std::uint32_t>(t * sizeof(thunk_data));
 
-									return import_info{ thunk.is_ordinal != 0, ordinal, name, const_bin_addr{ base, slot_rva } };
+									return import_info{ module_name, import_name, thunk.is_ordinal != 0, ordinal, const_bin_addr{ base, slot_rva } };
 								});
 					})
 				| views::join;
