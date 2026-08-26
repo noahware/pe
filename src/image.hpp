@@ -3,6 +3,7 @@
 #include "dos_header.hpp"
 #include "nt_headers.hpp"
 #include "export_directory.hpp"
+#include "delay_load_directory.hpp"
 #include "import_directory.hpp"
 #include "debug_directory.hpp"
 #include "reloc_directory.hpp"
@@ -117,35 +118,34 @@ namespace pe
 							? descs[d].original_first_thunk
 							: descs[d].first_thunk;
 
-						const auto* thunks = reinterpret_cast<const thunk_data*>(base + lookup_rva);
-						const auto iat_rva = descs[d].first_thunk;
+						return import_thunks(base, descs[d].name, lookup_rva, descs[d].first_thunk);
+					})
+				| views::join;
+		}
 
-						const auto module_name = descs[d].name
-							? string_view_t{ reinterpret_cast<const char*>(base + descs[d].name) }
-							: string_view_t{};
+		[[nodiscard]] auto delay_imports() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.delay_import;
+			const auto img_base = base_addr();
 
-						return views::iota(0u)
-							| views::take_while([thunks](const std::uint32_t t) { return thunks[t].used(); })
-							| views::transform([base, thunks, iat_rva, module_name](const std::uint32_t t) -> import_info
-								{
-									const auto& thunk = thunks[t];
+			const auto* descs = dir.virtual_address && dir.used()
+				? reinterpret_cast<const delay_load_descriptor*>(base + dir.virtual_address)
+				: nullptr;
 
-									auto import_name = string_view_t{};
-									auto ordinal = std::uint32_t{};
+			// the descriptor array is terminated by an all zero entry, so there is no count to iterate to
+			return views::iota(0u)
+				| views::take_while([descs](const std::uint32_t d) { return descs && descs[d].dll_name_rva; })
+				| views::transform([base, descs, img_base](const std::uint32_t d)
+					{
+						// the old style descriptors hold vas, so they have to be brought back down to rvas
+						const auto to_rva = [&](const std::uint32_t field)
+						{
+							return descs[d].attributes.rva_based ? field : static_cast<std::uint32_t>(field - img_base);
+						};
 
-									if (thunk.is_ordinal)
-									{
-										ordinal = static_cast<std::uint32_t>(thunk.ordinal);
-									}
-									else
-									{
-										import_name = reinterpret_cast<const import_by_name*>(base + thunk.address_of_data)->str();
-									}
-
-									const auto slot_rva = iat_rva + static_cast<std::uint32_t>(t * sizeof(thunk_data));
-
-									return import_info{ module_name, import_name, thunk.is_ordinal != 0, ordinal, const_bin_addr{ base, slot_rva } };
-								});
+						return import_thunks(base, to_rva(descs[d].dll_name_rva),
+							to_rva(descs[d].import_name_table_rva), to_rva(descs[d].import_address_table_rva));
 					})
 				| views::join;
 		}
