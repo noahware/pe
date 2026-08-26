@@ -68,7 +68,6 @@ namespace pe
 				? reinterpret_cast<const export_directory*>(base + dir.virtual_address)
 				: nullptr;
 
-			const auto num_funcs = exp_dir ? exp_dir->number_of_functions : 0u;
 			const auto num_names = exp_dir ? exp_dir->number_of_names : 0u;
 			const auto ord_base = exp_dir ? exp_dir->base : 0u;
 
@@ -76,25 +75,15 @@ namespace pe
 			const auto* names = exp_dir ? reinterpret_cast<const std::uint32_t*>(base + exp_dir->address_of_names) : nullptr;
 			const auto* name_ords = exp_dir ? reinterpret_cast<const std::uint16_t*>(base + exp_dir->address_of_name_ordinals) : nullptr;
 
-			return views::iota(0u, num_funcs)
-				| views::filter([funcs](const std::uint32_t i) { return funcs[i] != 0; })
-				| views::transform([base, funcs, names, name_ords, num_names, ord_base](const std::uint32_t i) -> export_info
+			// the name table is the direction the directory indexes, so walking it needs no lookup, the cost
+			// is that exports carrying no name have no entry here and cannot be reached this way
+			return views::iota(0u, num_names)
+				| views::transform([base, funcs, names, name_ords, ord_base](const std::uint32_t k) -> export_info
 					{
-						auto name = string_view_t{};
+						const auto func_index = name_ords[k];
+						const auto name = string_view_t{ reinterpret_cast<const char*>(base + names[k]) };
 
-						for (std::uint32_t k = 0; k < num_names; ++k)
-						{
-							if (name_ords[k] != i)
-							{
-								continue;
-							}
-
-							name = reinterpret_cast<const char*>(base + names[k]);
-
-							break;
-						}
-
-						return export_info{ name.empty(), ord_base + i, name, const_bin_addr{ base, funcs[i] } };
+						return export_info{ false, ord_base + func_index, name, const_bin_addr{ base, funcs[func_index] } };
 					});
 		}
 
