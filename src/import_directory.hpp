@@ -25,24 +25,21 @@ namespace pe
 
 	static_assert(sizeof(import_by_name) == 0x4);
 
-	struct thunk_data
+	union thunk_data
 	{
-		union
+		std::uint64_t raw;
+
+		struct
 		{
-			std::uint64_t raw;
+			std::uint64_t ordinal : 16;
+			std::uint64_t : 47;
+			std::uint64_t is_ordinal : 1;
+		};
 
-			struct
-			{
-				std::uint64_t ordinal : 16;
-				std::uint64_t : 47;
-				std::uint64_t is_ordinal : 1;
-			};
-
-			struct
-			{
-				std::uint64_t address_of_data : 31;
-				std::uint64_t : 33;
-			};
+		struct
+		{
+			std::uint64_t address_of_data : 31;
+			std::uint64_t : 33;
 		};
 
 		[[nodiscard]] bool used() const noexcept
