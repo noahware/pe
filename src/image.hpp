@@ -59,9 +59,9 @@ namespace pe
 			const auto* names = exp_dir ? reinterpret_cast<const std::uint32_t*>(base + exp_dir->address_of_names) : nullptr;
 			const auto* name_ords = exp_dir ? reinterpret_cast<const std::uint16_t*>(base + exp_dir->address_of_name_ordinals) : nullptr;
 
-			return std::views::iota(0u, num_funcs)
-				| std::views::filter([funcs](const std::uint32_t i) { return funcs[i] != 0; })
-				| std::views::transform([base, funcs, names, name_ords, num_names, ord_base](const std::uint32_t i) -> export_info
+			return views::iota(0u, num_funcs)
+				| views::filter([funcs](const std::uint32_t i) { return funcs[i] != 0; })
+				| views::transform([base, funcs, names, name_ords, num_names, ord_base](const std::uint32_t i) -> export_info
 					{
 						auto name = string_view_t{};
 
@@ -91,12 +91,12 @@ namespace pe
 				: nullptr;
 
 			// the descriptor array is null terminated, so there is no count to iterate to
-			return std::views::iota(0u)
-				| std::views::take_while([descs](const std::uint32_t d)
+			return views::iota(0u)
+				| views::take_while([descs](const std::uint32_t d)
 					{
 						return descs && (descs[d].original_first_thunk || descs[d].first_thunk);
 					})
-				| std::views::transform([base, descs](const std::uint32_t d)
+				| views::transform([base, descs](const std::uint32_t d)
 					{
 						// bound imports overwrite the IAT, so prefer the untouched lookup table
 						const auto lookup_rva = descs[d].original_first_thunk
@@ -106,9 +106,9 @@ namespace pe
 						const auto* thunks = reinterpret_cast<const thunk_data*>(base + lookup_rva);
 						const auto iat_rva = descs[d].first_thunk;
 
-						return std::views::iota(0u)
-							| std::views::take_while([thunks](const std::uint32_t t) { return thunks[t].used(); })
-							| std::views::transform([base, thunks, iat_rva](const std::uint32_t t) -> import_info
+						return views::iota(0u)
+							| views::take_while([thunks](const std::uint32_t t) { return thunks[t].used(); })
+							| views::transform([base, thunks, iat_rva](const std::uint32_t t) -> import_info
 								{
 									const auto& thunk = thunks[t];
 
@@ -129,7 +129,7 @@ namespace pe
 									return import_info{ thunk.is_ordinal != 0, ordinal, name, const_bin_addr{ base, slot_rva } };
 								});
 					})
-				| std::views::join;
+				| views::join;
 		}
 
 		[[nodiscard]] span_t<section_header> sections() noexcept;

@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include "deps.hpp"
 
 #include "data_directory.hpp"
 #include "section_header.hpp"
