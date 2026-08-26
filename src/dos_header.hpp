@@ -31,7 +31,9 @@ namespace pe
 
 		[[nodiscard]] nt_headers* nt_hdrs() noexcept
 		{
-			return const_cast<nt_headers*>(std::as_const(*this).nt_hdrs());
+			const auto& self = *this;
+
+			return const_cast<nt_headers*>(self.nt_hdrs());
 		}
 
 		[[nodiscard]] const nt_headers* nt_hdrs() const noexcept
