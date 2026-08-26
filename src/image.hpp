@@ -13,6 +13,12 @@ namespace pe
 	public:
 		image() noexcept = default;
 
+		template <class T>
+		[[nodiscard]] T as() const noexcept
+		{
+			return reinterpret_cast<T>(this);
+		}
+
 		[[nodiscard]] dos_header* dos_hdr() noexcept
 		{
 			return &dos_hdr_;
@@ -37,7 +43,7 @@ namespace pe
 
 		[[nodiscard]] auto exports() const noexcept
 		{
-			const auto* const base = reinterpret_cast<const std::uint8_t*>(this);
+			const auto* const base = as<const std::uint8_t*>();
 			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.exports;
 
 			const auto* exp_dir = dir.virtual_address && dir.used()
