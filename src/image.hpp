@@ -4,6 +4,7 @@
 #include "nt_headers.hpp"
 #include "export_directory.hpp"
 #include "import_directory.hpp"
+#include "debug_directory.hpp"
 #include "reloc_directory.hpp"
 #include "tls_directory.hpp"
 
@@ -147,6 +148,18 @@ namespace pe
 								});
 					})
 				| views::join;
+		}
+
+		// unlike the other directories this one is a plain array, sized by the data dir
+		[[nodiscard]] span_t<const debug_directory> debug_dirs() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.debug;
+
+			if (!dir.virtual_address || !dir.used())
+				return {};
+
+			return { reinterpret_cast<const debug_directory*>(base + dir.virtual_address), dir.size / sizeof(debug_directory) };
 		}
 
 		[[nodiscard]] const tls_directory* tls() const noexcept
