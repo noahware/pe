@@ -21,8 +21,25 @@ namespace pe
 
 	struct unwind_info
 	{
-		std::uint8_t version : 3;
-		std::uint8_t flags : 5;
+		union
+		{
+			struct
+			{
+				std::uint8_t version : 3;
+				std::uint8_t flags : 5;
+			};
+
+			struct
+			{
+				std::uint8_t : 3;
+				std::uint8_t exception_handler : 1;
+				std::uint8_t unwind_handler : 1;
+				// the codes are followed by another runtime function instead of a handler
+				std::uint8_t chain_info : 1;
+				std::uint8_t : 2;
+			};
+		};
+
 		std::uint8_t size_of_prolog;
 		std::uint8_t unwind_code_count;
 		std::uint8_t frame_register : 4;
@@ -36,6 +53,7 @@ namespace pe
 		}
 	};
 
+	static_assert(sizeof(unwind_info) == 0x6);
 	static_assert(offsetof(unwind_info, codes) == 0x4);
 
 	struct runtime_function
