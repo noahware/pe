@@ -10,7 +10,7 @@ namespace pe
 		bool is_ordinal;
 		std::uint32_t ordinal;
 		string_view_t name;
-		bin_addr loc;
+		const_bin_addr loc;
 	};
 
 	struct export_directory

@@ -13,7 +13,7 @@ span_t<pe::section_header> pe::image::sections() noexcept
 	const auto& self = *this;
 	const auto sec = self.sections();
 
-	return { const_cast<pe::section_header*>(sec.data()), sec.size() };
+	return { const_cast<section_header*>(sec.data()), sec.size() };
 }
 
 span_t<const pe::section_header> pe::image::sections() const noexcept

@@ -2,6 +2,8 @@
 #include <string_view>
 #include <optional>
 #include <span>
+#include <ranges>
+#include <type_traits>
 
 template <class T>
 using span_t = std::span<T>;

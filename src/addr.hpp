@@ -3,12 +3,13 @@
 
 namespace pe
 {
-	class bin_addr
+	template <class Byte>
+	class base_bin_addr
 	{
 	public:
-		bin_addr() noexcept = default;
+		base_bin_addr() noexcept = default;
 
-		explicit bin_addr(std::uint8_t* const base, const std::uint32_t rva)
+		explicit base_bin_addr(Byte* const base, const std::uint32_t rva)
 			:	base_(base),
 				rva_(rva) { }
 
@@ -17,14 +18,17 @@ namespace pe
 			return rva_;
 		}
 
-		template <class T = std::uint8_t*>
+		template <class T = Byte*>
 		[[nodiscard]] T addr() const noexcept
 		{
 			return reinterpret_cast<T>(base_ + rva_);
 		}
 
 	protected:
-		std::uint8_t* base_;
+		Byte* base_;
 		std::uint32_t rva_;
 	};
+
+	using bin_addr = base_bin_addr<std::uint8_t>;
+	using const_bin_addr = base_bin_addr<const std::uint8_t>;
 }

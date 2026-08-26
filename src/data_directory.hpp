@@ -13,7 +13,7 @@ namespace pe
 
 		[[nodiscard]] bool used() const noexcept
 		{
-			return size != 0;
+			return virtual_address != 0 && size != 0;
 		}
 
 		[[nodiscard]] explicit operator bool() const noexcept
