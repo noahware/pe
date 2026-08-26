@@ -2,6 +2,7 @@
 #include "deps.hpp"
 #include "dos_header.hpp"
 #include "nt_headers.hpp"
+#include "exception_directory.hpp"
 #include "export_directory.hpp"
 #include "delay_load_directory.hpp"
 #include "import_directory.hpp"
@@ -149,6 +150,26 @@ namespace pe
 							to_rva(descs[d].import_name_table_rva), to_rva(descs[d].import_address_table_rva));
 					})
 				| views::join;
+		}
+
+		[[nodiscard]] auto runtime_funcs() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.exception;
+
+			const auto* funcs = dir.virtual_address && dir.used()
+				? reinterpret_cast<const runtime_function*>(base + dir.virtual_address)
+				: nullptr;
+
+			// like the debug directory this is a plain array, so the data dir gives the count
+			const auto count = funcs ? dir.size / sizeof(runtime_function) : 0u;
+
+			return views::iota(0u, count)
+				| views::transform([base, funcs](const std::uint32_t f) -> runtime_function_info
+					{
+						return { const_bin_addr{ base, funcs[f].begin_address }, const_bin_addr{ base, funcs[f].end_address },
+							reinterpret_cast<const unwind_info*>(base + funcs[f].unwind_info_rva) };
+					});
 		}
 
 		// unlike the other directories this one is a plain array, sized by the data dir
