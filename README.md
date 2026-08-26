@@ -1,6 +1,6 @@
 # pe
 
-Modern C++ library that parses Portable Executable files. C++ standard library usage is abstracted in deps.hpp so it can be switched out with a custom implementation. It makes use of string views to not create any unnecessary allocations too.
+Modern C++ library that parses the portable executable file format. C++ standard library usage is abstracted in deps.hpp so it can be switched out with a custom implementation. It makes use of string views to not create any unnecessary allocations too.
 
 # Sections iteration
 
