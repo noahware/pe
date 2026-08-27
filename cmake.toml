@@ -1,0 +1,9 @@
+[project]
+name = "pe"
+languages = ["CXX"]
+
+[target.pe-tests]
+type = "executable"
+sources = ["tests/main.cpp"]
+include-directories = ["src"]
+compile-features = ["cxx_std_23"]
