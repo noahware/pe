@@ -1,6 +1,6 @@
 # pe
 
-Modern C++ library that parses the portable executable file format. C++ standard library usage is abstracted in deps.hpp so it can be switched out with a custom implementation. It makes use of string views to not create any unnecessary allocations too. The library can be used on any OS, it does not rely on Windows specific headers. The test app is built for Windows though.
+Modern C++ library that parses the portable executable file format. The library **does not** rely on Windows specific headers. C++ standard library usage is *abstracted* in deps.hpp so it can be switched out with a custom implementation. It makes use of string views to not create any unnecessary allocations too. The test app is built for Windows though.
 
 # Building tests
 
@@ -11,14 +11,23 @@ cmake -B build
 cmake --build build --config Release
 ```
 
-# Signature scan
+# Examples
+
+## Getting an instance
+
+```cpp
+const auto mod = LoadLibraryA("kernel32.dll");
+const auto& img = *reinterpret_cast<const pe::image*>(module);
+```
+
+## Signature scan
 
 ```c++
 const auto sig = img.sig_scan<std::uintptr_t>("C3 ? CC");
 std::println("addr: 0x{:X}", sig);
 ```
 
-# Sections iteration
+## Sections iteration
 
 ```c++
 for (const auto& sec : img.sections())
@@ -29,7 +38,7 @@ for (const auto& sec : img.sections())
 }
 ```
 
-# Exports iteration
+## Exports iteration
 
 ```c++
 for (const auto& exp : img.exports())
@@ -38,14 +47,14 @@ for (const auto& exp : img.exports())
 }
 ```
 
-## Direct export lookup
+### Direct export lookup
 
 ```c++
 const auto message_box = img.find_export<std::uintptr_t>("MessageBoxA");
 std::println("address: 0x{:X}", message_box);
 ```
 
-# Imports iteration
+## Imports iteration
 
 ```c++
 for (const auto& imp : img.imports())
@@ -56,7 +65,7 @@ for (const auto& imp : img.imports())
 }
 ```
 
-# Delay imports iteration
+## Delay imports iteration
 
 ```c++
 for (const auto& imp : img.delay_imports())
@@ -67,7 +76,7 @@ for (const auto& imp : img.delay_imports())
 }
 ```
 
-# Runtime functions iteration
+## Runtime functions iteration
 
 ```c++
 for (const auto& func : img.runtime_funcs())
@@ -82,7 +91,7 @@ for (const auto& func : img.runtime_funcs())
 }
 ```
 
-# Unwind codes iteration
+### Unwind codes iteration
 
 ```c++
 for (const auto& code : func.info->code_list())
@@ -92,7 +101,7 @@ for (const auto& code : func.info->code_list())
 }
 ```
 
-# Relocs iteration
+## Relocs iteration
 
 ```c++
 for (const auto& rel : img.relocs())
@@ -101,7 +110,7 @@ for (const auto& rel : img.relocs())
 }
 ```
 
-# TLS callbacks iteration
+## TLS callbacks iteration
 
 ```c++
 for (const auto& callback : img.tls_callbacks())
@@ -110,7 +119,7 @@ for (const auto& callback : img.tls_callbacks())
 }
 ```
 
-# Debug directories iteration
+## Debug directories iteration
 
 ```c++
 for (const auto& dbg : img.debug_dirs())
