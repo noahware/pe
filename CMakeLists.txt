@@ -75,7 +75,7 @@ endif()
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${pe-tests_SOURCES})
 
 target_compile_features(pe-tests PRIVATE
-	cxx_std_23
+	cxx_std_20
 )
 
 target_include_directories(pe-tests PRIVATE

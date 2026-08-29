@@ -1,9 +1,12 @@
+#include <cstdio>
 #include <format>
-#include <print>
 #include <ranges>
 #include <Windows.h>
 
 #include "pe.hpp"
+
+// std::println is C++23, this keeps the same call shape without it
+#define LOG(...) std::printf("%s\n", std::format(__VA_ARGS__).c_str())
 
 namespace
 {
@@ -12,11 +15,11 @@ namespace
 
 	void print_sections(const pe::image& img)
 	{
-		std::println("sections ({})", img.sections().size());
+		LOG("sections ({})", img.sections().size());
 
 		for (const auto& sec : img.sections())
 		{
-			std::println("\t{} rva {} size {} {}{}{}", sec.name(), sec.virtual_address, sec.virtual_size,
+			LOG("\t{} rva {} size {} {}{}{}", sec.name(), sec.virtual_address, sec.virtual_size,
 				sec.characteristics.mem_read ? 'r' : '-', sec.characteristics.mem_write ? 'w' : '-',
 				sec.characteristics.mem_execute ? 'x' : '-');
 		}
@@ -24,11 +27,11 @@ namespace
 
 	void print_exports(const pe::image& img)
 	{
-		std::println("exports ({})", std::ranges::distance(img.exports()));
+		LOG("exports ({})", std::ranges::distance(img.exports()));
 
 		for (const auto& exp : img.exports() | std::views::take(preview_count))
 		{
-			std::println("\t{} {} {}", exp.ordinal, exp.is_ordinal ? "<no name>" : exp.name, exp.loc.addr<const void*>());
+			LOG("\t{} {} {}", exp.ordinal, exp.is_ordinal ? "<no name>" : exp.name, exp.loc.addr<const void*>());
 		}
 	}
 
@@ -36,23 +39,23 @@ namespace
 	{
 		const auto message_box = img.find_export<std::uintptr_t>("MessageBoxA");
 
-		std::println("MessageBoxA address (found by export): 0x{:X}", message_box);
+		LOG("MessageBoxA address (found by export): 0x{:X}", message_box);
 	}
 
 	void print_sig_scan(const pe::image& img)
 	{
 		const auto sig = img.sig_scan<std::uintptr_t>("C3 ? CC");
 
-		std::println("signature \"C3 ? CC\" address: 0x{:X}", sig);
+		LOG("signature \"C3 ? CC\" address: 0x{:X}", sig);
 	}
 
 	void print_imports(const pe::image& img)
 	{
-		std::println("imports ({})", std::ranges::distance(img.imports()));
+		LOG("imports ({})", std::ranges::distance(img.imports()));
 
 		for (const auto& imp : img.imports() | std::views::take(preview_count))
 		{
-			std::println("\t{} {} iat {}", imp.module_name, imp.is_ordinal ? "<by ordinal>" : imp.import_name,
+			LOG("\t{} {} iat {}", imp.module_name, imp.is_ordinal ? "<by ordinal>" : imp.import_name,
 				imp.iat_slot.addr<const void*>());
 		}
 	}
@@ -64,7 +67,7 @@ int main()
 
 	if (!module)
 	{
-		std::println("failed to load user32.dll: {}", GetLastError());
+		LOG("failed to load user32.dll: {}", GetLastError());
 
 		return 1;
 	}
