@@ -128,3 +128,7 @@ for (const auto& dbg : img.debug_dirs())
 		dbg.address_of_raw_data);
 }
 ```
+
+# License
+
+The project uses the Apache-2.0 license.
