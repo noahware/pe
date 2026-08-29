@@ -129,6 +129,18 @@ for (const auto& dbg : img.debug_dirs())
 }
 ```
 
+## Certificates iteration
+
+This must be done on the raw file mapping, not one that has already been virtually mapped as the security directory is destroyed when virtually mapped.
+
+```c++
+for (const auto& cert : img.certificates())
+{
+	LOG("revision 0x{:X} type {} data {} bytes", static_cast<std::uint16_t>(cert.revision),
+		static_cast<std::uint16_t>(cert.type), cert.data.size());
+}
+```
+
 # License
 
 The project uses the Apache-2.0 license.

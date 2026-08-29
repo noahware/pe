@@ -1,7 +1,7 @@
 #pragma once
 #include <cstddef>
+#include <charconv>
 #include <cstdint>
-#include <cstdlib>
 #include <optional>
 #include <ranges>
 #include <vector>
@@ -23,7 +23,8 @@ namespace pe
 
 	using string_view_t = std::string_view;
 
-	using std::strtoul;
+	// bounded by an end pointer, unlike the strto* family which read as far as the digits go
+	using std::from_chars;
 
 	namespace ranges
 	{

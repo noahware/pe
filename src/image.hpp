@@ -9,6 +9,7 @@
 #include "load_config_directory.hpp"
 #include "debug_directory.hpp"
 #include "reloc_directory.hpp"
+#include "security_directory.hpp"
 #include "tls_directory.hpp"
 
 namespace pe
@@ -303,6 +304,50 @@ namespace pe
 				| views::join;
 		}
 
+		// the security directory is mapped at a raw file address, not a virtual address
+		[[nodiscard]] auto certificates() const noexcept
+		{
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.security;
+
+			const auto offset = dir.used() ? dir.virtual_address : 0u;
+			const auto sz = offset ? dir.size : 0u;
+
+			// entries are variable length and padded out to an 8 byte boundary, so the nth one can only
+			// be found by walking from the first
+			const auto cert_at = [this, offset, sz](const std::uint32_t index) -> const win_certificate*
+			{
+				std::uint32_t walked = 0;
+
+				for (std::uint32_t i = 0; walked < sz; ++i)
+				{
+					if (offset + walked + sizeof(win_certificate) > size())
+						break;
+
+					const auto* cert = reinterpret_cast<const win_certificate*>(as() + offset + walked);
+
+					// a length too small for the header, or one that runs past the table, ends the walk
+					if (cert->length < sizeof(win_certificate) || cert->length > sz - walked)
+						break;
+
+					if (i == index)
+						return cert;
+
+					walked += cert->length + 7 & ~7u;
+				}
+
+				return nullptr;
+			};
+
+			return views::iota(0u)
+				| views::take_while([cert_at](const std::uint32_t c) { return cert_at(c) != nullptr; })
+				| views::transform([cert_at](const std::uint32_t c) -> certificate_info
+					{
+						const auto* const cert = cert_at(c);
+
+						return { cert->revision, cert->type, cert->data() };
+					});
+		}
+
 		[[nodiscard]] span_t<section_header> sections() noexcept
 		{
 			const auto& self = *this;
@@ -352,9 +397,20 @@ namespace pe
 				}
 				else
 				{
+					// from_chars is bounded by an end pointer, so a signature that is not nul terminated
+					// cannot be walked off the end of, and "E8FF" stays two bytes rather than one value
 					constexpr int radix = 16;
 
-					bytes.push_back(pe::strtoul(ch, nullptr, radix));
+					const char* const end = ch + 2;
+					std::uint8_t byte = 0;
+
+					// two hex digits never overflow a byte, so landing on the end is the whole check
+					if (from_chars(ch, end, byte, radix).ptr != end)
+					{
+						return {};
+					}
+
+					bytes.push_back(byte);
 
 					i++;
 				}
@@ -365,6 +421,13 @@ namespace pe
 
 		[[nodiscard]] const std::uint8_t* sig_scan(const sig_bytes_t& bytes) const
 		{
+			// an empty pattern matches at once, which would hand back the first byte of the first
+			// code section rather than nothing
+			if (bytes.empty())
+			{
+				return nullptr;
+			}
+
 			for (const auto seg : sections())
 			{
 				if (!seg.characteristics.cnt_code)
