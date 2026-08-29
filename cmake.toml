@@ -4,6 +4,6 @@ languages = ["CXX"]
 
 [target.pe-tests]
 type = "executable"
-sources = ["tests/main.cpp"]
+sources = ["tests/main.cpp", "src/*.hpp"]
 include-directories = ["src"]
 compile-features = ["cxx_std_23"]

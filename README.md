@@ -11,6 +11,13 @@ cmake -B build
 cmake --build build --config Release
 ```
 
+# Signature scan
+
+```c++
+const auto sig = img.sig_scan<std::uintptr_t>("C3 ? CC");
+std::println("addr: 0x{:X}", sig);
+```
+
 # Sections iteration
 
 ```c++
@@ -29,6 +36,13 @@ for (const auto& exp : img.exports())
 {
 	std::println("ordinal {} {} {}", exp.ordinal, exp.name, exp.loc.rva());
 }
+```
+
+## Direct export lookup
+
+```c++
+const auto message_box = img.find_export<std::uintptr_t>("MessageBoxA");
+std::println("address: 0x{:X}", message_box);
 ```
 
 # Imports iteration

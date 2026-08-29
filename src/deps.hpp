@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <ranges>
+#include <vector>
 #include <span>
 #include <string_view>
 
@@ -16,7 +17,12 @@ namespace pe
 	template <class T>
 	using optional_t = std::optional<T>;
 
+	template <class T>
+	using vector_t = std::vector<T>;
+
 	using string_view_t = std::string_view;
+
+	using std::strtoul;
 
 	namespace ranges
 	{

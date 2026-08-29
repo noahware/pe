@@ -38,6 +38,25 @@ list(APPEND pe-tests_SOURCES
 )
 
 list(APPEND pe-tests_SOURCES
+	"src/addr.hpp"
+	"src/data_directory.hpp"
+	"src/debug_directory.hpp"
+	"src/delay_load_directory.hpp"
+	"src/deps.hpp"
+	"src/dos_header.hpp"
+	"src/exception_directory.hpp"
+	"src/export_directory.hpp"
+	"src/image.hpp"
+	"src/import_directory.hpp"
+	"src/load_config_directory.hpp"
+	"src/nt_headers.hpp"
+	"src/pe.hpp"
+	"src/reloc_directory.hpp"
+	"src/section_header.hpp"
+	"src/tls_directory.hpp"
+)
+
+list(APPEND pe-tests_SOURCES
 	cmake.toml
 )
 

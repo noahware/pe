@@ -18,7 +18,7 @@ namespace pe
 	public:
 		image() noexcept = default;
 
-		template <class T>
+		template <class T = const std::uint8_t*>
 		[[nodiscard]] T as() const noexcept
 		{
 			return reinterpret_cast<T>(this);
@@ -80,6 +80,23 @@ namespace pe
 			}
 
 			return (*it).loc.addr<T>();
+		}
+
+		template <class T = std::uint8_t*>
+		[[nodiscard]] T sig_scan(const string_view_t str) noexcept
+		{
+			const auto& self = *this;
+
+			return reinterpret_cast<T>(const_cast<std::uint8_t*>(self.sig_scan(str)));
+		}
+
+		// takes IDA format signatures (e.g. "E8 ? ? ? ? E9")
+		template <class T = const std::uint8_t*>
+		[[nodiscard]] T sig_scan(const string_view_t str) const noexcept
+		{
+			const auto bytes = parse_sig_bytes(str);
+
+			return reinterpret_cast<T>(sig_scan(bytes));
 		}
 
 		[[nodiscard]] auto exports() const noexcept
@@ -302,6 +319,87 @@ namespace pe
 		}
 
 	protected:
+		using sig_bytes_t = vector_t<std::int16_t>;
+
+		[[nodiscard]] static sig_bytes_t parse_sig_bytes(const string_view_t str)
+		{
+			if (str.empty())
+			{
+				return {};
+			}
+
+			sig_bytes_t bytes; // -1 = wildcard
+			bytes.reserve(str.size() / 3);
+
+			for (std::size_t i = 0; i < str.size() - 1; i++)
+			{
+				const char* const ch = &str[i];
+
+				if (*ch == ' ')
+				{
+					continue;
+				}
+
+				if (*ch == '?')
+				{
+					bytes.push_back(-1);
+
+					// for sigs that have double wild card format (e.g. "E8 ?? ?? ?? ?? E9")
+					if (str[i + 1] == '?')
+					{
+						i++;
+					}
+				}
+				else
+				{
+					constexpr int radix = 16;
+
+					bytes.push_back(pe::strtoul(ch, nullptr, radix));
+
+					i++;
+				}
+			}
+
+			return bytes;
+		}
+
+		[[nodiscard]] const std::uint8_t* sig_scan(const sig_bytes_t& bytes) const
+		{
+			for (const auto seg : sections())
+			{
+				if (!seg.characteristics.cnt_code)
+				{
+					continue;
+				}
+
+				const auto start = as() + seg.virtual_address;
+				const auto end = start + seg.virtual_size;
+
+				for (auto curr = start; curr < end - bytes.size(); curr++)
+				{
+					bool found = true;
+
+					for (std::size_t i = 0; i < bytes.size(); i++)
+					{
+						const auto byte = bytes[i];
+
+						if (byte != -1 && byte != *(curr + i))
+						{
+							found = false;
+							break;
+						}
+					}
+
+					if (found)
+					{
+						return curr;
+					}
+				}
+			}
+
+			return nullptr;
+		}
+
 		dos_header dos_hdr_;
 	};
 }

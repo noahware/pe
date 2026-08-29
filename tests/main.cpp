@@ -1,4 +1,4 @@
-#include <algorithm>
+#include <format>
 #include <print>
 #include <ranges>
 #include <Windows.h>
@@ -32,6 +32,20 @@ namespace
 		}
 	}
 
+	void print_find_export(const pe::image& img)
+	{
+		const auto message_box = img.find_export<std::uintptr_t>("MessageBoxA");
+
+		std::println("MessageBoxA address (found by export): 0x{:X}", message_box);
+	}
+
+	void print_sig_scan(const pe::image& img)
+	{
+		const auto sig = img.sig_scan<std::uintptr_t>("C3 ? CC");
+
+		std::println("signature \"C3 ? CC\" address: 0x{:X}", sig);
+	}
+
 	void print_imports(const pe::image& img)
 	{
 		std::println("imports ({})", std::ranges::distance(img.imports()));
@@ -60,6 +74,8 @@ int main()
 	print_sections(img);
 	print_exports(img);
 	print_imports(img);
+	print_find_export(img);
+	print_sig_scan(img);
 
 	return 0;
 }
