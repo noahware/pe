@@ -59,6 +59,29 @@ namespace pe
 			return nt_hdrs()->optional_hdr.size_of_image;
 		}
 
+		template <class T = std::uint8_t*>
+		[[nodiscard]] T find_export(const string_view_t name) noexcept
+		{
+			const auto& self = *this;
+
+			return reinterpret_cast<T>(const_cast<std::uint8_t*>(self.find_export(name)));
+		}
+
+		template <class T = const std::uint8_t*>
+		[[nodiscard]] T find_export(const string_view_t name) const noexcept
+		{
+			// the range has to outlive the search, it owns the closure the iterator reads through
+			auto exps = exports();
+			const auto it = ranges::find(exps, name, &export_info::name);
+
+			if (it == exps.end())
+			{
+				return {};
+			}
+
+			return (*it).loc.addr<T>();
+		}
+
 		[[nodiscard]] auto exports() const noexcept
 		{
 			const auto* const base = as<const std::uint8_t*>();

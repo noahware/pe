@@ -18,6 +18,11 @@ namespace pe
 
 	using string_view_t = std::string_view;
 
+	namespace ranges
+	{
+		using std::ranges::find;
+	}
+
 	namespace views
 	{
 		using std::views::filter;
