@@ -1,6 +1,6 @@
 # pe
 
-Modern C++ library that parses the portable executable file format. The library **does not** rely on Windows specific headers. C++ standard library usage is *abstracted* in deps.hpp so it can be switched out with a custom implementation. It makes use of string views to not create any unnecessary allocations too. The tests/ app is built for Windows targets. The library requires at least C++ 20.
+Modern C++ library that parses the portable executable file format. The library **does not** rely on Windows specific headers. C++ standard library usage is *abstracted* in deps.hpp so it can be switched out with a custom implementation. It makes use of string views to not create any unnecessary allocations too. The tests/ app is built for Windows targets. The library requires at least C++ 20. Tested on MSVC, Clang, and GCC.
 
 # Building tests
 

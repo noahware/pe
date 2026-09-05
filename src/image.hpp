@@ -60,46 +60,6 @@ namespace pe
 			return nt_hdrs()->optional_hdr.size_of_image;
 		}
 
-		template <class T = std::uint8_t*>
-		[[nodiscard]] T find_export(const string_view_t name) noexcept
-		{
-			const auto& self = *this;
-
-			return reinterpret_cast<T>(const_cast<std::uint8_t*>(self.find_export(name)));
-		}
-
-		template <class T = const std::uint8_t*>
-		[[nodiscard]] T find_export(const string_view_t name) const noexcept
-		{
-			// the range has to outlive the search, it owns the closure the iterator reads through
-			auto exps = exports();
-			const auto it = ranges::find(exps, name, &export_info::name);
-
-			if (it == exps.end())
-			{
-				return {};
-			}
-
-			return (*it).loc.addr<T>();
-		}
-
-		template <class T = std::uint8_t*>
-		[[nodiscard]] T sig_scan(const string_view_t str) noexcept
-		{
-			const auto& self = *this;
-
-			return reinterpret_cast<T>(const_cast<std::uint8_t*>(self.sig_scan(str)));
-		}
-
-		// takes IDA format signatures (e.g. "E8 ? ? ? ? E9")
-		template <class T = const std::uint8_t*>
-		[[nodiscard]] T sig_scan(const string_view_t str) const noexcept
-		{
-			const auto bytes = parse_sig_bytes(str);
-
-			return reinterpret_cast<T>(sig_scan(bytes));
-		}
-
 		[[nodiscard]] auto exports() const noexcept
 		{
 			const auto* const base = as<const std::uint8_t*>();
@@ -126,6 +86,46 @@ namespace pe
 
 						return export_info{ false, ord_base + func_index, name, const_bin_addr{ base, funcs[func_index] } };
 					});
+		}
+
+		template <class T = std::uint8_t*>
+		[[nodiscard]] T find_export(const string_view_t name) noexcept
+		{
+			const auto& self = *this;
+
+			return reinterpret_cast<T>(const_cast<std::uint8_t*>(self.find_export(name)));
+		}
+
+		template <class T = const std::uint8_t*>
+		[[nodiscard]] T find_export(const string_view_t name) const noexcept
+		{
+			// the range has to outlive the search, it owns the closure the iterator reads through
+			auto exps = exports();
+			const auto it = ranges::find(exps, name, &export_info::name);
+
+			if (it == exps.end())
+			{
+				return {};
+			}
+
+			return (*it).loc.template addr<T>();
+		}
+
+		template <class T = std::uint8_t*>
+		[[nodiscard]] T sig_scan(const string_view_t str) noexcept
+		{
+			const auto& self = *this;
+
+			return reinterpret_cast<T>(const_cast<std::uint8_t*>(self.sig_scan(str)));
+		}
+
+		// takes IDA format signatures (e.g. "E8 ? ? ? ? E9")
+		template <class T = const std::uint8_t*>
+		[[nodiscard]] T sig_scan(const string_view_t str) const noexcept
+		{
+			const auto bytes = parse_sig_bytes(str);
+
+			return reinterpret_cast<T>(sig_scan(bytes));
 		}
 
 		[[nodiscard]] auto imports() const noexcept
@@ -360,7 +360,7 @@ namespace pe
 		{
 			const auto nt = nt_hdrs();
 
-			return span_t{ nt->first_section_hdr(), nt->num_sections() };
+			return { nt->first_section_hdr(), nt->num_sections() };
 		}
 
 	protected:
