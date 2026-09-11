@@ -50,6 +50,31 @@ namespace pe
 			unwind_opcode_x64 code : 4;
 			std::uint8_t info : 4;
 		};
+
+		[[nodiscard]] std::size_t slots() const noexcept
+		{
+			using enum unwind_opcode_x64;
+			switch (code)
+			{
+			case push_nonvol:
+			case alloc_small:
+			case set_fpreg:
+			case push_machframe:
+				return 1;
+			case save_nonvol:
+			case epilog:
+			case save_xmm128:
+				return 2;
+			case alloc_large:
+				return info == 0 ? 2 : 3;
+			case save_nonvol_far:
+			case spare:
+			case save_xmm128_far:
+				return 3;
+			default:
+				return 1;
+			}
+		}
 	};
 
 	static_assert(sizeof(unwind_code_x64) == 0x2);
