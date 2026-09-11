@@ -60,6 +60,16 @@ namespace pe
 			return nt_hdrs()->optional_hdr.size_of_image;
 		}
 
+		[[nodiscard]] bool is_x64() const noexcept
+		{
+			return nt_hdrs()->file_hdr.machine == 0x8664;
+		}
+
+		[[nodiscard]] bool is_arm64() const noexcept
+		{
+			return nt_hdrs()->file_hdr.machine == 0xAA64;
+		}
+
 		[[nodiscard]] auto exports() const noexcept
 		{
 			const auto* const base = as<const std::uint8_t*>();
@@ -182,23 +192,45 @@ namespace pe
 				| views::join;
 		}
 
-		[[nodiscard]] auto runtime_funcs() const noexcept
+		[[nodiscard]] auto runtime_funcs_x64() const noexcept
 		{
 			const auto* const base = as<const std::uint8_t*>();
 			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.exception;
 
 			const auto* funcs = dir.virtual_address && dir.used()
-				? reinterpret_cast<const runtime_function*>(base + dir.virtual_address)
+				? reinterpret_cast<const runtime_function_x64*>(base + dir.virtual_address)
 				: nullptr;
 
 			// like the debug directory this is a plain array, so the data dir gives the count
-			const auto count = funcs ? dir.size / sizeof(runtime_function) : 0u;
+			const auto count = funcs ? dir.size / sizeof(runtime_function_x64) : 0u;
 
 			return views::iota(0u, count)
-				| views::transform([base, funcs](const std::uint32_t f) -> runtime_function_info
+				| views::transform([base, funcs](const std::uint32_t f) -> runtime_function_info_x64
 					{
 						return { const_bin_addr{ base, funcs[f].begin_address }, const_bin_addr{ base, funcs[f].end_address },
-							reinterpret_cast<const unwind_info*>(base + funcs[f].unwind_info_rva) };
+							reinterpret_cast<const unwind_info_x64*>(base + funcs[f].unwind_info_rva) };
+					});
+		}
+
+		[[nodiscard]] auto runtime_funcs_arm64() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+			const auto& dir = nt_hdrs()->optional_hdr.data_dirs.exception;
+
+			const auto* funcs = dir.virtual_address && dir.used()
+				? reinterpret_cast<const runtime_function_arm64*>(base + dir.virtual_address)
+				: nullptr;
+
+			const auto count = funcs ? dir.size / sizeof(runtime_function_arm64) : 0u;
+
+			return views::iota(0u, count)
+				| views::transform([base, funcs](const std::uint32_t f) -> runtime_function_info_arm64
+					{
+						const auto& entry = funcs[f];
+						const auto* info = !entry.is_packed()
+							? reinterpret_cast<const unwind_info_arm64*>(base + entry.unwind_data)
+							: nullptr;
+						return { const_bin_addr{ base, entry.begin_address }, &entry, info };
 					});
 		}
 
