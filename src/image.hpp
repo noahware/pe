@@ -246,6 +246,24 @@ namespace pe
 			return { reinterpret_cast<const debug_directory*>(base + dir.virtual_address), dir.size / sizeof(debug_directory) };
 		}
 
+		[[nodiscard]] const codeview_rsds* codeview() const noexcept
+		{
+			const auto* const base = as<const std::uint8_t*>();
+
+			for (const auto& entry : debug_dirs())
+			{
+				if (entry.type != debug_directory_type::codeview || !entry.address_of_raw_data)
+					continue;
+
+				const auto* cv = reinterpret_cast<const codeview_rsds*>(base + entry.address_of_raw_data);
+
+				if (cv->ok())
+					return cv;
+			}
+
+			return nullptr;
+		}
+
 		[[nodiscard]] const load_config_directory* load_config() const noexcept
 		{
 			const auto* const base = as<const std::uint8_t*>();
