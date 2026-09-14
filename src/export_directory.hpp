@@ -7,6 +7,7 @@ namespace pe
 	struct export_info
 	{
 		bool is_ordinal;
+		bool forwarded;
 		std::uint32_t ordinal;
 		string_view_t name;
 		const_bin_addr loc;

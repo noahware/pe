@@ -82,6 +82,11 @@ namespace pe
 			const auto num_names = exp_dir ? exp_dir->number_of_names : 0u;
 			const auto ord_base = exp_dir ? exp_dir->base : 0u;
 
+			// the directory's own range is what separates a forwarder string from a code rva, and it only
+			// exists because used() already required a non-zero size to reach here
+			const auto dir_begin = dir.virtual_address;
+			const auto dir_end = dir.virtual_address + dir.size;
+
 			const auto* funcs = exp_dir ? reinterpret_cast<const std::uint32_t*>(base + exp_dir->address_of_functions) : nullptr;
 			const auto* names = exp_dir ? reinterpret_cast<const std::uint32_t*>(base + exp_dir->address_of_names) : nullptr;
 			const auto* name_ords = exp_dir ? reinterpret_cast<const std::uint16_t*>(base + exp_dir->address_of_name_ordinals) : nullptr;
@@ -89,12 +94,14 @@ namespace pe
 			// the name table is the direction the directory indexes, so walking it needs no lookup, the cost
 			// is that exports carrying no name have no entry here and cannot be reached this way
 			return views::iota(0u, num_names)
-				| views::transform([base, funcs, names, name_ords, ord_base](const std::uint32_t k) -> export_info
+				| views::transform([base, funcs, names, name_ords, ord_base, dir_begin, dir_end](const std::uint32_t k) -> export_info
 					{
 						const auto func_index = name_ords[k];
 						const auto name = string_view_t{ reinterpret_cast<const char*>(base + names[k]) };
+						const auto rva = funcs[func_index];
+						const auto forwarded = rva >= dir_begin && rva < dir_end;
 
-						return export_info{ false, ord_base + func_index, name, const_bin_addr{ base, funcs[func_index] } };
+						return export_info{ false, forwarded, ord_base + func_index, name, const_bin_addr{ base, rva } };
 					});
 		}
 
