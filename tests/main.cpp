@@ -3,7 +3,7 @@
 #include <ranges>
 #include <Windows.h>
 
-#include "pe.hpp"
+#include <pe/image.hpp>
 
 // std::println is C++23, this keeps the same call shape without it
 #define LOG(...) std::printf("%s\n", std::format(__VA_ARGS__).c_str())

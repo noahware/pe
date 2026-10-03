@@ -12,7 +12,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set(CMKR_ROOT_PROJECT ON)
 
 	# Bootstrap cmkr and automatically regenerate CMakeLists.txt
-	include("cmkr.cmake" OPTIONAL RESULT_VARIABLE CMKR_INCLUDE_RESULT)
+	include(cmkr.cmake OPTIONAL RESULT_VARIABLE CMKR_INCLUDE_RESULT)
 	if(CMKR_INCLUDE_RESULT)
 		cmkr()
 	endif()
@@ -21,7 +21,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 	# Create a configure-time dependency on cmake.toml to improve IDE support
-	configure_file(cmake.toml cmake.toml COPYONLY)
+	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS cmake.toml)
 endif()
 
 project(pe
@@ -29,49 +29,31 @@ project(pe
 		CXX
 )
 
-# Target pe-tests
-set(CMKR_TARGET pe-tests)
-set(pe-tests_SOURCES "")
-
-list(APPEND pe-tests_SOURCES
+# Target: pe-tests
+set(pe-tests_SOURCES
+	cmake.toml
+	"include/pe/addr.hpp"
+	"include/pe/data_directory.hpp"
+	"include/pe/debug_directory.hpp"
+	"include/pe/delay_load_directory.hpp"
+	"include/pe/deps.hpp"
+	"include/pe/dos_header.hpp"
+	"include/pe/exception_directory.hpp"
+	"include/pe/export_directory.hpp"
+	"include/pe/image.hpp"
+	"include/pe/import_directory.hpp"
+	"include/pe/load_config_directory.hpp"
+	"include/pe/nt_headers.hpp"
+	"include/pe/reloc_directory.hpp"
+	"include/pe/section_header.hpp"
+	"include/pe/security_directory.hpp"
+	"include/pe/tls_directory.hpp"
 	"tests/main.cpp"
 )
 
-list(APPEND pe-tests_SOURCES
-	"src/addr.hpp"
-	"src/data_directory.hpp"
-	"src/debug_directory.hpp"
-	"src/delay_load_directory.hpp"
-	"src/deps.hpp"
-	"src/dos_header.hpp"
-	"src/exception_directory.hpp"
-	"src/export_directory.hpp"
-	"src/image.hpp"
-	"src/import_directory.hpp"
-	"src/load_config_directory.hpp"
-	"src/nt_headers.hpp"
-	"src/pe.hpp"
-	"src/reloc_directory.hpp"
-	"src/section_header.hpp"
-	"src/tls_directory.hpp"
-)
-
-list(APPEND pe-tests_SOURCES
-	cmake.toml
-)
-
-set(CMKR_SOURCES ${pe-tests_SOURCES})
 add_executable(pe-tests)
 
-if(pe-tests_SOURCES)
-	target_sources(pe-tests PRIVATE ${pe-tests_SOURCES})
-endif()
-
-get_directory_property(CMKR_VS_STARTUP_PROJECT DIRECTORY ${PROJECT_SOURCE_DIR} DEFINE_PROPERTY VS_STARTUP_PROJECT)
-if(NOT CMKR_VS_STARTUP_PROJECT)
-	set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT pe-tests)
-endif()
-
+target_sources(pe-tests PRIVATE ${pe-tests_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${pe-tests_SOURCES})
 
 target_compile_features(pe-tests PRIVATE
@@ -79,8 +61,10 @@ target_compile_features(pe-tests PRIVATE
 )
 
 target_include_directories(pe-tests PRIVATE
-	"src"
+	include
 )
 
-unset(CMKR_TARGET)
-unset(CMKR_SOURCES)
+get_directory_property(CMKR_VS_STARTUP_PROJECT DIRECTORY ${PROJECT_SOURCE_DIR} VS_STARTUP_PROJECT)
+if(NOT CMKR_VS_STARTUP_PROJECT)
+	set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT pe-tests)
+endif()
