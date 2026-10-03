@@ -1,9 +1,13 @@
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <format>
 #include <ranges>
 #include <Windows.h>
 
 #include <pe/image.hpp>
+
+#include "pe/raw.hpp"
 
 // std::println is C++23, this keeps the same call shape without it
 #define LOG(...) std::printf("%s\n", std::format(__VA_ARGS__).c_str())
@@ -59,26 +63,84 @@ namespace
 				imp.iat_slot.addr<const void*>());
 		}
 	}
+
+	void print_img(const pe::image& img)
+	{
+		print_sections(img);
+		print_exports(img);
+		print_imports(img);
+		print_find_export(img);
+		print_sig_scan(img);
+	}
+
+	[[nodiscard]] std::wstring module_path(const HMODULE module)
+	{
+		std::wstring path(MAX_PATH, L'\0');
+
+		path.resize(GetModuleFileNameW(module, path.data(), MAX_PATH));
+
+		return path;
+	}
+
+	[[nodiscard]] std::vector<std::uint8_t> read_file(const std::filesystem::path& path)
+	{
+		std::ifstream file(path, std::ios::binary);
+
+		if (!file.is_open())
+			return { };
+
+		return { std::istreambuf_iterator(file), { } };
+	}
+
+	void print_mem_user32()
+	{
+		LOG("attempting to log mem user32.dll");
+
+		const auto module = LoadLibraryA("user32.dll");
+
+		if (!module)
+		{
+			LOG("failed to load mem user32.dll");
+
+			return;
+		}
+
+		print_img(*reinterpret_cast<const pe::image*>(module));
+	}
+
+	void print_disk_user32()
+	{
+		LOG("attempting to log disk user32.dll");
+
+		const auto module = LoadLibraryA("user32.dll");
+
+		if (!module)
+		{
+			LOG("failed to load mem user32.dll");
+
+			return;
+		}
+
+		const auto path = module_path(module);
+		const auto file = read_file(path);
+
+		if (file.empty())
+		{
+			LOG("failed to load disk user32.dll");
+
+			return;
+		}
+
+		const pe::raw_image raw(file);
+
+		print_img(*raw.virt_img());
+	}
 }
 
 int main()
 {
-	const auto module = LoadLibraryA("user32.dll");
-
-	if (!module)
-	{
-		LOG("failed to load user32.dll: {}", GetLastError());
-
-		return 1;
-	}
-
-	const auto& img = *reinterpret_cast<const pe::image*>(module);
-
-	print_sections(img);
-	print_exports(img);
-	print_imports(img);
-	print_find_export(img);
-	print_sig_scan(img);
+	print_mem_user32();
+	print_disk_user32();
 
 	return 0;
 }

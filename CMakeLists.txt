@@ -44,6 +44,7 @@ set(pe-tests_SOURCES
 	"include/pe/import_directory.hpp"
 	"include/pe/load_config_directory.hpp"
 	"include/pe/nt_headers.hpp"
+	"include/pe/raw.hpp"
 	"include/pe/reloc_directory.hpp"
 	"include/pe/section_header.hpp"
 	"include/pe/security_directory.hpp"

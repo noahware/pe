@@ -23,6 +23,8 @@ namespace pe
 
 	using string_view_t = std::string_view;
 
+	using std::memcpy;
+
 	// bounded by an end pointer, unlike the strto* family which read as far as the digits go
 	using std::from_chars;
 
