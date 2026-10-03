@@ -35,6 +35,16 @@ namespace pe
 			return reinterpret_cast<const image*>(buf_.data());
 		}
 
+		[[nodiscard]] std::span<std::uint8_t> virt_buffer() noexcept
+		{
+			return buf_;
+		}
+
+		[[nodiscard]] std::span<const std::uint8_t> virt_buffer() const noexcept
+		{
+			return buf_;
+		}
+
 	protected:
 		vector_t<std::uint8_t> buf_;
 	};
