@@ -143,7 +143,7 @@ for (const auto& cert : img.certificates())
 
 # Changing the C++ standard library
 
-See [deps.hpp](src/deps.hpp), which contains the required features. Create a header that defines the required features in the pe:: namespace and `#define PE_DEPS_HDR <path/to/hdr.hpp>`. The library will use that header instead.
+See [deps.hpp](include/pe/deps.hpp), which contains the required features. Create a header that defines the required features in the pe:: namespace and `#define PE_DEPS_HDR <path/to/hdr.hpp>`. The library will use that header instead.
 
 # License
 
