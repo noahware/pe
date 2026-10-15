@@ -129,7 +129,7 @@ namespace pe
 		}
 
 		template <class T = std::uint8_t*>
-		[[nodiscard]] T sig_scan(const string_view_t str, const bool skip_pageable = false) noexcept
+		[[nodiscard]] T sig_scan(const string_view_t str, const bool skip_pageable = false, const bool skip_data = true) noexcept
 		{
 			const auto& self = *this;
 
@@ -138,11 +138,11 @@ namespace pe
 
 		// takes IDA format signatures (e.g. "E8 ? ? ? ? E9")
 		template <class T = const std::uint8_t*>
-		[[nodiscard]] T sig_scan(const string_view_t str, const bool skip_pageable = false) const noexcept
+		[[nodiscard]] T sig_scan(const string_view_t str, const bool skip_pageable = false, const bool skip_data = true) const noexcept
 		{
 			const auto bytes = parse_sig_bytes(str);
 
-			return reinterpret_cast<T>(sig_scan(bytes, skip_pageable));
+			return reinterpret_cast<T>(sig_scan(bytes, skip_pageable, skip_data));
 		}
 
 		[[nodiscard]] auto imports() const noexcept
@@ -476,7 +476,7 @@ namespace pe
 			return bytes;
 		}
 
-		[[nodiscard]] const std::uint8_t* sig_scan(const sig_bytes_t& bytes, const bool skip_pageable = false) const
+		[[nodiscard]] const std::uint8_t* sig_scan(const sig_bytes_t& bytes, const bool skip_pageable = false, const bool skip_data = true) const
 		{
 			if (bytes.empty())
 			{
@@ -485,7 +485,7 @@ namespace pe
 
 			for (const auto seg : sections())
 			{
-				if (!seg.characteristics.cnt_code)
+				if (skip_data && !seg.characteristics.cnt_code)
 					continue;
 
 				if (skip_pageable && !seg.characteristics.mem_not_paged)
