@@ -19,6 +19,12 @@ namespace pe
 	public:
 		image() noexcept = default;
 
+		template <class T = std::uint8_t*>
+		[[nodiscard]] T as() noexcept
+		{
+			return reinterpret_cast<T>(this);
+		}
+
 		template <class T = const std::uint8_t*>
 		[[nodiscard]] T as() const noexcept
 		{
