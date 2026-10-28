@@ -151,6 +151,15 @@ namespace pe
 			return reinterpret_cast<T>(sig_scan(bytes, skip_pageable, skip_data));
 		}
 
+		template <class T = std::uint8_t*>
+		[[nodiscard]] static T sig_scan(const string_view_t str, const std::uint8_t* begin, const std::uint8_t* end) noexcept
+		{
+			const auto bytes = parse_sig_bytes(str);
+			const auto found = const_cast<std::uint8_t*>(sig_scan(bytes, begin, end));
+
+			return reinterpret_cast<T>(found);
+		}
+
 		[[nodiscard]] auto imports() const noexcept
 		{
 			const auto* const base = as<const std::uint8_t*>();
@@ -500,25 +509,34 @@ namespace pe
 				const auto start = as() + seg.virtual_address;
 				const auto end = start + seg.virtual_size;
 
-				for (auto curr = start; curr < end - bytes.size(); curr++)
+				if (const auto found = sig_scan(bytes, start, end))
+					return found;
+			}
+
+			return nullptr;
+		}
+
+		[[nodiscard]] static const std::uint8_t* sig_scan(const sig_bytes_t& bytes, const std::uint8_t* const start,
+		                                                  const std::uint8_t* const end)
+		{
+			for (auto curr = start; curr < end - bytes.size(); curr++)
+			{
+				bool found = true;
+
+				for (std::size_t i = 0; i < bytes.size(); i++)
 				{
-					bool found = true;
+					const auto byte = bytes[i];
 
-					for (std::size_t i = 0; i < bytes.size(); i++)
+					if (byte != -1 && byte != *(curr + i))
 					{
-						const auto byte = bytes[i];
-
-						if (byte != -1 && byte != *(curr + i))
-						{
-							found = false;
-							break;
-						}
+						found = false;
+						break;
 					}
+				}
 
-					if (found)
-					{
-						return curr;
-					}
+				if (found)
+				{
+					return curr;
 				}
 			}
 
