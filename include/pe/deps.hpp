@@ -5,6 +5,7 @@
 #if defined(PE_DEPS_HDR)
 #	include PE_DEPS_HDR
 #else
+#	include <array>
 #	include <charconv>
 #	include <ranges>
 #	include <vector>
@@ -17,6 +18,9 @@ namespace pe
 {
 	template <class T>
 	using span_t = std::span<T>;
+
+	template <class T, std::size_t N>
+	using array_t = std::array<T, N>;
 
 	template <class T>
 	using vector_t = std::vector<T>;
