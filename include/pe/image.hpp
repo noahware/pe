@@ -1,5 +1,6 @@
 #pragma once
 #include "deps.hpp"
+#include "util.hpp"
 #include "dos_header.hpp"
 #include "nt_headers.hpp"
 #include "exception_directory.hpp"
@@ -134,31 +135,25 @@ namespace pe
 			return (*it).loc.template addr<T>();
 		}
 
+		// takes IDA format signatures (e.g. "E8 ? ? ? ? E9"), defined in sig.hpp
 		template <class T = std::uint8_t*>
-		[[nodiscard]] T sig_scan(const string_view_t str, const bool skip_pageable = false, const bool skip_data = true) noexcept
-		{
-			const auto& self = *this;
+		[[nodiscard]] T sig_scan(const string_view_t str, const bool skip_pageable = false, const bool skip_data = true) noexcept;
 
-			return reinterpret_cast<T>(const_cast<std::uint8_t*>(self.sig_scan(str, skip_pageable)));
-		}
-
-		// takes IDA format signatures (e.g. "E8 ? ? ? ? E9")
 		template <class T = const std::uint8_t*>
-		[[nodiscard]] T sig_scan(const string_view_t str, const bool skip_pageable = false, const bool skip_data = true) const noexcept
-		{
-			const auto bytes = parse_sig_bytes(str);
-
-			return reinterpret_cast<T>(sig_scan(bytes, skip_pageable, skip_data));
-		}
+		[[nodiscard]] T sig_scan(const string_view_t str, const bool skip_pageable = false, const bool skip_data = true) const noexcept;
 
 		template <class T = std::uint8_t*>
-		[[nodiscard]] static T sig_scan(const string_view_t str, const std::uint8_t* begin, const std::uint8_t* end) noexcept
-		{
-			const auto bytes = parse_sig_bytes(str);
-			const auto found = const_cast<std::uint8_t*>(sig_scan(bytes, begin, end));
+		[[nodiscard]] static T sig_scan(const string_view_t str, const std::uint8_t* begin, const std::uint8_t* end) noexcept;
 
-			return reinterpret_cast<T>(found);
-		}
+		// compile time signature, parsed into a constexpr array (e.g. sig_scan<"E8 ? ? ? ? E9">())
+		template <fixed_string Sig, class T = std::uint8_t*>
+		[[nodiscard]] T sig_scan(const bool skip_pageable = false, const bool skip_data = true) noexcept;
+
+		template <fixed_string Sig, class T = const std::uint8_t*>
+		[[nodiscard]] T sig_scan(const bool skip_pageable = false, const bool skip_data = true) const noexcept;
+
+		template <fixed_string Sig, class T = std::uint8_t*>
+		[[nodiscard]] static T sig_scan(const std::uint8_t* begin, const std::uint8_t* end) noexcept;
 
 		[[nodiscard]] auto imports() const noexcept
 		{
@@ -436,114 +431,9 @@ namespace pe
 		}
 
 	protected:
-		using sig_bytes_t = vector_t<std::int16_t>;
-		using sig_bytes_view_t = span_t<const std::int16_t>;
-
-		[[nodiscard]] static sig_bytes_t parse_sig_bytes(const string_view_t str)
-		{
-			if (str.empty())
-			{
-				return {};
-			}
-
-			sig_bytes_t bytes; // -1 = wildcard
-			bytes.reserve(str.size() / 3);
-
-			for (std::size_t i = 0; i < str.size() - 1; i++)
-			{
-				const char* const ch = &str[i];
-
-				if (*ch == ' ')
-				{
-					continue;
-				}
-
-				if (*ch == '?')
-				{
-					bytes.push_back(-1);
-
-					// for sigs that have double wild card format (e.g. "E8 ?? ?? ?? ?? E9")
-					if (str[i + 1] == '?')
-					{
-						i++;
-					}
-				}
-				else
-				{
-					// from_chars is bounded by an end pointer, so a signature that is not nul terminated
-					// cannot be walked off the end of, and "E8FF" stays two bytes rather than one value
-					constexpr int radix = 16;
-
-					const char* const end = ch + 2;
-					std::uint8_t byte = 0;
-
-					// two hex digits never overflow a byte, so landing on the end is the whole check
-					if (from_chars(ch, end, byte, radix).ptr != end)
-					{
-						return {};
-					}
-
-					bytes.push_back(byte);
-
-					i++;
-				}
-			}
-
-			return bytes;
-		}
-
-		[[nodiscard]] const std::uint8_t* sig_scan(const sig_bytes_view_t bytes, const bool skip_pageable = false, const bool skip_data = true) const
-		{
-			if (bytes.empty())
-			{
-				return nullptr;
-			}
-
-			for (const auto seg : sections())
-			{
-				if (skip_data && !seg.characteristics.cnt_code)
-					continue;
-
-				if (skip_pageable && !seg.characteristics.mem_not_paged)
-					continue;
-
-				const auto start = as() + seg.virtual_address;
-				const auto end = start + seg.virtual_size;
-
-				if (const auto found = sig_scan(bytes, start, end))
-					return found;
-			}
-
-			return nullptr;
-		}
-
-		[[nodiscard]] static const std::uint8_t* sig_scan(const sig_bytes_view_t bytes, const std::uint8_t* const start,
-		                                                  const std::uint8_t* const end)
-		{
-			for (auto curr = start; curr < end - bytes.size(); curr++)
-			{
-				bool found = true;
-
-				for (std::size_t i = 0; i < bytes.size(); i++)
-				{
-					const auto byte = bytes[i];
-
-					if (byte != -1 && byte != *(curr + i))
-					{
-						found = false;
-						break;
-					}
-				}
-
-				if (found)
-				{
-					return curr;
-				}
-			}
-
-			return nullptr;
-		}
 
 		dos_header dos_hdr_;
 	};
 }
+
+#include "sig.hpp"

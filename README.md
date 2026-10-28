@@ -22,8 +22,15 @@ const auto& img = *reinterpret_cast<const pe::image*>(module);
 
 ## Signature scan
 
+### Runtime parse of sig (uses allocations)
 ```c++
 const auto sig = img.sig_scan<std::uintptr_t>("C3 ? CC");
+std::println("addr: 0x{:X}", sig);
+```
+
+### Compile-time parse of sig
+```c++
+const auto sig = img.sig_scan<"C3 ? CC", std::uintptr_t>();
 std::println("addr: 0x{:X}", sig);
 ```
 

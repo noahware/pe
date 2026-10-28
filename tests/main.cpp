@@ -46,11 +46,18 @@ namespace
 		LOG("MessageBoxA address (found by export): 0x{:X}", message_box);
 	}
 
-	void print_sig_scan(const pe::image& img)
+	void print_runtime_sig_scan(const pe::image& img)
 	{
 		const auto sig = img.sig_scan<std::uintptr_t>("C3 ? CC");
 
-		LOG("signature \"C3 ? CC\" address: 0x{:X}", sig);
+		LOG("runtime signature \"C3 ? CC\" address: 0x{:X}", sig);
+	}
+
+	void print_compile_time_sig_scan(const pe::image& img)
+	{
+		const auto sig = img.sig_scan<"C3 ? CC", std::uintptr_t>();
+
+		LOG("compile-time signature \"C3 ? CC\" address: 0x{:X}", sig);
 	}
 
 	void print_imports(const pe::image& img)
@@ -70,7 +77,8 @@ namespace
 		print_exports(img);
 		print_imports(img);
 		print_find_export(img);
-		print_sig_scan(img);
+		print_runtime_sig_scan(img);
+		print_compile_time_sig_scan(img);
 	}
 
 	[[nodiscard]] std::wstring module_path(const HMODULE module)
