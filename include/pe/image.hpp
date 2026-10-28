@@ -437,6 +437,7 @@ namespace pe
 
 	protected:
 		using sig_bytes_t = vector_t<std::int16_t>;
+		using sig_bytes_view_t = span_t<const std::int16_t>;
 
 		[[nodiscard]] static sig_bytes_t parse_sig_bytes(const string_view_t str)
 		{
@@ -491,7 +492,7 @@ namespace pe
 			return bytes;
 		}
 
-		[[nodiscard]] const std::uint8_t* sig_scan(const sig_bytes_t& bytes, const bool skip_pageable = false, const bool skip_data = true) const
+		[[nodiscard]] const std::uint8_t* sig_scan(const sig_bytes_view_t bytes, const bool skip_pageable = false, const bool skip_data = true) const
 		{
 			if (bytes.empty())
 			{
@@ -516,7 +517,7 @@ namespace pe
 			return nullptr;
 		}
 
-		[[nodiscard]] static const std::uint8_t* sig_scan(const sig_bytes_t& bytes, const std::uint8_t* const start,
+		[[nodiscard]] static const std::uint8_t* sig_scan(const sig_bytes_view_t bytes, const std::uint8_t* const start,
 		                                                  const std::uint8_t* const end)
 		{
 			for (auto curr = start; curr < end - bytes.size(); curr++)
